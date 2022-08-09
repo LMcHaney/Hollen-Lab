@@ -1,0 +1,60 @@
+%%%%%%%% This code runs semitip_v3.exe 15 times varying ONLY the tip-sample
+%%%%%%%% bias voltage of the fort.9 file. It will send the fort.12 files to
+%%%%%%%% the folder at the of 'movefile' and 'Folder' with the names
+%%%%%%%% Grad01, Grad02, ..., Grad15 and you can use these to create color
+%%%%%%%% plots. MAKE SURE TO INITIALIZE THE FORT.9 FILE TO THE INITIAL BIAS
+%%%%%%%% AND ALL OTHER PARAMETERS AND THAT THERE ARE NO FORT.12 IN EITHER 
+%%%%%%%% DIRECTORY. The 'bias' is what will be input to the
+%%%%%%%% fort.9 file and you should vary how you see just make sure it
+%%%%%%%% stays at the length of 15. 
+% varied bias
+bias = linspace(-0.1,-0.4,15);
+x = 1;
+while x<=15
+    % this part is checking to see if you have a fort.12 file, if you do it
+    % renames it and moves it, then on the next interation it will run
+    % semitip_v3 again and produce a new fort.12 file. 
+    if isfile('fort.12') == 1
+     
+        % moving and naming fort.12
+        %%% HERE IS WHERE YOU DETERMINE WHERE THE FORT.12 FILES WILL BE
+        %%% STORED. MAKE SURE TO DEFINE AN EXISTING FOLDER BOTH IN LINE 23
+        %%% MOVEFILE(FILE, FOLDER) AND LINE 24 WHICH DEFINES THE FOLDER
+        movefile('fort.12', 'test\')
+        Folder ='C:\Users\Logan\Documents\Research Summer 2022\FEENSTRA\test';
+        B =dir( fullfile(Folder, '*.12') );
+        fileNames = { B.name };
+        newName = fullfile(Folder, sprintf( 'Grad%0d.12', x ) );
+        movefile( fullfile(Folder, fileNames{ x }), newName ); 
+%       DO NOT change where this indexing is done and again make sure to
+%       INITIALIZE the fort.9 with all conditions before running
+        x = x+1;
+
+        % adjusting the fort.9 file to next bias
+        fid = fopen('fort.9','r');
+        i = 1;
+        tline = fgetl(fid);
+        A{i} = tline;
+        while ischar(tline)
+            i = i+1;
+            tline = fgetl(fid);
+            A{i} = tline;
+        end
+        fclose(fid);
+        % Change cell A
+        A{6} = sprintf('%d',bias(x));
+        % Write cell A into txt
+        fid = fopen('fort.9', 'w');
+        for i = 1:numel(A)
+            if A{i+1} == -1
+                fprintf(fid,'%s', A{i});
+                break
+            else
+                fprintf(fid,'%s\n', A{i});
+            end
+        end
+    else
+        % executing feenstra code
+        !semitip_v3.exe
+    end
+end         
